@@ -1,0 +1,83 @@
+Pill Reminder Project Code
+( We added if condition for notification thread for both windows and linux operating system too)
+Other code content , I have mentioned in class by explaining you .
+
+
+#include <iostream>
+#include <string>
+#include <chrono>
+#include <thread>
+#include <vector>
+
+#ifdef _WIN32
+#include <Windows.h>
+#elif _linux_
+#include <unistd.h>
+#endif
+
+using namespace std;
+
+void setReminder(const string& userName, const string& pillName, const vector<string>& dosageTimes) {
+    for (int i = 0; i < dosageTimes.size(); ++i) {
+        cout << "Reminder for " << userName << ": Take " << pillName << " (Dosage " << i + 1 << ") at " << dosageTimes[i] << endl;
+
+       
+        int dosageHour = stoi(dosageTimes[i].substr(0, 2));
+        int dosageMinute = stoi(dosageTimes[i].substr(3, 2));
+
+     
+        time_t now = chrono::system_clock::to_time_t(chrono::system_clock::now());
+        tm* localTime = localtime(&now);
+
+       
+        tm reminderTime = *localTime;
+        reminderTime.tm_hour = dosageHour;
+        reminderTime.tm_min = dosageMinute;
+        reminderTime.tm_sec = 0;
+
+       
+        time_t reminderTimestamp = mktime(&reminderTime);
+        time_t currentTimestamp = mktime(localTime);
+        int diffSeconds = difftime(reminderTimestamp, currentTimestamp);
+
+     
+        this_thread::sleep_for(chrono::seconds(diffSeconds));
+
+       
+        #ifdef _WIN32
+        MessageBoxA(nullptr, ("Reminder: Take " + pillName + " (Dosage " + to_string(i + 1) + ")").c_str(), "Pill Reminder", MB_OK);
+        #elif _linux_
+        string command = "notify-send 'Pill Reminder' 'Take " + pillName + " (Dosage " + to_string(i + 1) + ")'";
+        system(command.c_str());
+        #endif
+    }
+}
+
+int main() {
+    string userName;
+    string pillName;
+    int dosageCount;
+    vector<string> dosageTimes;
+
+    // Input user name, pill name, dosage per day, and dosage times
+    cout << "Enter your name: ";
+    getline(cin, userName);
+    cout << "Enter the pill name: ";
+    getline(cin, pillName);
+    cout << "Enter the number of dosages per day: ";
+    cin >> dosageCount;
+    cin.ignore(); // Ignore the newline character
+
+    for (int i = 0; i < dosageCount; ++i) {
+        string dosageTime;
+        cout << "Enter dosage time " << i + 1 << " (e.g., 09:00 AM): ";
+        getline(cin, dosageTime);
+        dosageTimes.push_back(dosageTime);
+    }
+
+   
+    setReminder(userName, pillName, dosageTimes);
+
+    return 0;
+}
+
